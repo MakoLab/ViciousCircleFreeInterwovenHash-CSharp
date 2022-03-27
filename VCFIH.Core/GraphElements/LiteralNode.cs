@@ -9,8 +9,22 @@ namespace VCFIH.Core.GraphElements
 {
     internal class LiteralNode : Node
     {
-        public LiteralNode(string identifier) : base(identifier)
+        public LiteralNode(string value, string? datatype, string? lang)
         {
+            if (datatype != null && lang != null)
+            {
+                throw new ArgumentException("Datatype and language cannot be present at the same time.");
+            }
+            Identifier = value;
+            if (datatype != null)
+            {
+                Identifier += datatype;
+            }
+            if (lang != null)
+            {
+                Identifier += lang;
+            }
+            // TODO: Implement literal normalization
         }
 
         public override string Translate(NodeRole role)
@@ -18,8 +32,8 @@ namespace VCFIH.Core.GraphElements
             var sb = new StringBuilder();
             sb.Append("grounded_node::role:");
             sb.Append(role == NodeRole.Subject ? "S" : "O");
-            sb.Append(Identifier); // TODO: Implement literal normalization
-            return sb.ToString(); ;
+            sb.Append(Identifier);
+            return sb.ToString();
         }
     }
 }

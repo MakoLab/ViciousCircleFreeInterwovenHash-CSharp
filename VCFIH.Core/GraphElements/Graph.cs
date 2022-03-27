@@ -280,7 +280,7 @@ namespace VCFIH.Core.GraphElements
                     while (miniqueue1.Count > 0)
                     {
                         var neigh = miniqueue1.Dequeue();
-                        foreach (var predicate in node.BlankNeighbours[neigh.Identifier])
+                        foreach (var predicate in node.BlankNeighbours[neigh.Identifier].OrderBy(uri => uri.ToString())
                         {
                             valueForComponent += new Triple(node, predicate, neigh).PrepareTriple();
                         }
