@@ -8,12 +8,18 @@ using VCFIH.Core.Utils;
 
 namespace VCFIH.Core.GraphElements
 {
+    using RealPriorityTuple = ValueTuple<string, uint, uint, uint, uint, string>;
+    using BlankPriorityTuple = ValueTuple<int, uint, uint, uint, uint, string>;
+    using BlankInterwovenPriorityTuple = ValueTuple<int, uint, uint, uint, uint, string, string>;
+
     internal class Graph
     {
         internal IHashCalculator hashCalculator;
         internal IList<Triple> Triples { get; set; } = new List<Triple>();
         internal Dictionary<string, BlankNode> BlankNodes { get; set; } = new Dictionary<string, BlankNode>();
         internal Dictionary<string, IriNode> IriNodes { get; set; } = new Dictionary<string, IriNode>();
+        internal Dictionary<string, IList<string>>? WeaklyCC { get; set; }
+        internal Dictionary<int, byte[]> ComponentHashValue { get; set; } = new Dictionary<int, byte[]>();
 
         public byte[] HashValue { get; set; }
 
@@ -27,6 +33,40 @@ namespace VCFIH.Core.GraphElements
             HashValue = new byte[hashCalculator.HashSize];
         }
 
+        public byte[] CalculateHash()
+        {
+            var hashValueForGraph = new byte[hashCalculator.HashSize];
+            WeaklyCC = TreeMarking();
+            foreach (var component in WeaklyCC)
+            {
+                var leadNode = component.Value[0];
+                PrepareSingleComponent(component.Value, preparing: true);
+                var q = hashCalculator.CalculateHashAsBytes(PrepareSingleComponent(component.Value, preparing: false));
+                if (!ComponentHashValue.ContainsKey(BlankNodes[leadNode].StructureNumber))
+                {
+                    ComponentHashValue.Add(BlankNodes[leadNode].StructureNumber, q);
+                }
+                else
+                {
+                    ComponentHashValue[BlankNodes[leadNode].StructureNumber] = q;
+                }
+                hashValueForGraph = ByteArrayUtils.AddHashes(hashValueForGraph, q);
+            }
+
+            foreach (var t in Triples)
+            {
+                if (t.Subject.IsBlank && t.Object.IsBlank)
+                    continue;
+                else
+                {
+                    var q = hashCalculator.CalculateHashAsBytes(t.PrepareTriple());
+                    hashValueForGraph = ByteArrayUtils.AddHashes(hashValueForGraph, q);
+                }
+            }
+            HashValue = hashValueForGraph;
+            return HashValue;
+        }
+
         public bool ContainsBlankNode(BlankNode bn) => BlankNodes.ContainsKey(bn.Identifier);
 
         public bool ContainsIriNode(IriNode iNode) => IriNodes.ContainsKey(iNode.Identifier);
@@ -34,11 +74,11 @@ namespace VCFIH.Core.GraphElements
         public void AddTriple(Triple triple)
         {
             var o = triple.Object;
-            if (o is BlankNode)
+            if (o is BlankNode bnode)
             {
                 if (!BlankNodes.ContainsKey(o.Identifier))
                 {
-                    BlankNodes.Add(o.Identifier, (BlankNode)o);
+                    BlankNodes.Add(o.Identifier, bnode);
                 }
                 o = BlankNodes[o.Identifier];
             }
@@ -89,68 +129,70 @@ namespace VCFIH.Core.GraphElements
 
         public void HashIncrementTriple(Triple newTriple)
         {
-            var caseNumber = 0;
-            var blankNumber = 0;
-            if (newTriple.Subject is BlankNode s)
-            {
-                blankNumber++;
-                if (ContainsBlankNode(s))
-                {
-                    caseNumber++;
-                }
-            }
-            if (newTriple.Object is BlankNode o)
-            {
-                blankNumber += 2;
-                if (ContainsBlankNode(o))
-                {
-                    caseNumber += 2;
-                }
-            }
-            var triplesToBeRehashed = new List<Triple>();
-            switch (caseNumber)
-            {
-                case 1:
-                    foreach (var t in Triples)
-                    {
-                        if ((t.Subject.Identifier == newTriple.Subject.Identifier && !t.Object.IsBlank)
-                            || (t.Object.Identifier == newTriple.Subject.Identifier && !t.Subject.IsBlank))
-                        {
-                            triplesToBeRehashed.Add(t);
-                        }
-                    }
-                    break;
-                case 2:
-                    foreach (var t in Triples)
-                    {
-                        if ((t.Subject.Identifier == newTriple.Object.Identifier && !t.Object.IsBlank)
-                            || (t.Object.Identifier == newTriple.Object.Identifier && !t.Subject.IsBlank))
-                        {
-                            triplesToBeRehashed.Add(t);
-                        }
-                    }
-                    break;
-                case 3:
-                    foreach (var t in Triples)
-                    {
-                        if ((t.Subject.Identifier == newTriple.Subject.Identifier && !t.Object.IsBlank)
-                          || (t.Object.Identifier == newTriple.Subject.Identifier && !t.Subject.IsBlank)
-                         || (t.Subject.Identifier == newTriple.Object.Identifier  && !t.Object.IsBlank)
-                          || (t.Object.Identifier == newTriple.Object.Identifier  && !t.Subject.IsBlank))
-                        {
-                            triplesToBeRehashed.Add(t);
-                        }
-                    }
-                    break;
-            }
-            byte[] totalityToSubtract;
-            if (caseNumber != 0)
-            {
-                foreach (var t in triplesToBeRehashed)
-                {
+            throw new NotImplementedException();
+
+            //var caseNumber = 0;
+            //var blankNumber = 0;
+            //if (newTriple.Subject is BlankNode s)
+            //{
+            //    blankNumber++;
+            //    if (ContainsBlankNode(s))
+            //    {
+            //        caseNumber++;
+            //    }
+            //}
+            //if (newTriple.Object is BlankNode o)
+            //{
+            //    blankNumber += 2;
+            //    if (ContainsBlankNode(o))
+            //    {
+            //        caseNumber += 2;
+            //    }
+            //}
+            //var triplesToBeRehashed = new List<Triple>();
+            //switch (caseNumber)
+            //{
+            //    case 1:
+            //        foreach (var t in Triples)
+            //        {
+            //            if ((t.Subject.Identifier == newTriple.Subject.Identifier && !t.Object.IsBlank)
+            //                || (t.Object.Identifier == newTriple.Subject.Identifier && !t.Subject.IsBlank))
+            //            {
+            //                triplesToBeRehashed.Add(t);
+            //            }
+            //        }
+            //        break;
+            //    case 2:
+            //        foreach (var t in Triples)
+            //        {
+            //            if ((t.Subject.Identifier == newTriple.Object.Identifier && !t.Object.IsBlank)
+            //                || (t.Object.Identifier == newTriple.Object.Identifier && !t.Subject.IsBlank))
+            //            {
+            //                triplesToBeRehashed.Add(t);
+            //            }
+            //        }
+            //        break;
+            //    case 3:
+            //        foreach (var t in Triples)
+            //        {
+            //            if ((t.Subject.Identifier == newTriple.Subject.Identifier && !t.Object.IsBlank)
+            //              || (t.Object.Identifier == newTriple.Subject.Identifier && !t.Subject.IsBlank)
+            //             || (t.Subject.Identifier == newTriple.Object.Identifier  && !t.Object.IsBlank)
+            //              || (t.Object.Identifier == newTriple.Object.Identifier  && !t.Subject.IsBlank))
+            //            {
+            //                triplesToBeRehashed.Add(t);
+            //            }
+            //        }
+            //        break;
+            //}
+            //byte[] totalityToSubtract;
+            //if (caseNumber != 0)
+            //{
+            //    foreach (var t in triplesToBeRehashed)
+            //    {
                     
-                }
-            }
+            //    }
+            //}
         }
 
         public Dictionary<string, IList<string>> TreeMarking()
@@ -199,11 +241,11 @@ namespace VCFIH.Core.GraphElements
             var i = 0;
             foreach (var r in result)
             {
-                i++;
                 foreach (var n in r.Value)
                 {
                     BlankNodes[n].StructureNumber = i;
                 }
+                i++;
             }
 
             return result;
@@ -212,11 +254,58 @@ namespace VCFIH.Core.GraphElements
         public string PrepareSingleComponent(IList<string> component, bool preparing)
         {
             var valueForComponent = "";
-            var priorityQueue = new PriorityQueue<Node, int>();
-            
+            var priorityQueue = new PriorityQueue<Node, BlankInterwovenPriorityTuple>();
+            foreach (var node in component)
+            {
+                BlankNodes[node].TempDegree = BlankNodes[node].BlankInDegree;
+                if (BlankNodes[node].BlankInDegree == 0)
+                {
+                    priorityQueue.Enqueue(BlankNodes[node], BlankNodes[node].GenerateBlankInterwovenPriorityTuple(this));
+                    BlankNodes[node].StructureLevel = 0;
+                }
+            }
+            while (priorityQueue.Count > 0)
+            {
+                var node = priorityQueue.Dequeue();
+
+                // Get all edges coming out of node for hashing
+
+                if (!preparing)
+                {
+                    var miniqueue1 = new PriorityQueue<Node, BlankInterwovenPriorityTuple>();
+                    foreach (var neighbour in node.BlankNeighbours.Keys)
+                    {
+                        miniqueue1.Enqueue(BlankNodes[neighbour], BlankNodes[neighbour].GenerateBlankInterwovenPriorityTuple(this));
+                    }
+                    while (miniqueue1.Count > 0)
+                    {
+                        var neigh = miniqueue1.Dequeue();
+                        foreach (var predicate in node.BlankNeighbours[neigh.Identifier])
+                        {
+                            valueForComponent += new Triple(node, predicate, neigh).PrepareTriple();
+                        }
+                    }
+                }
+
+                // Proceed with handling subsequent parts of our DAG.
+
+                foreach (var neighbour in node.BlankNeighbours.Keys)
+                {
+                    BlankNodes[neighbour].TempDegree -= (uint)node.BlankNeighbours[neighbour].Count;
+                    if (BlankNodes[neighbour].TempDegree == 0)
+                    {
+                        if (preparing)
+                        {
+                            BlankNodes[neighbour].StructureLevel = node.StructureLevel + 1;
+                        }
+                        priorityQueue.Enqueue(BlankNodes[neighbour], BlankNodes[neighbour].GenerateBlankInterwovenPriorityTuple(this));
+                    }
+                }
+            }
+            return valueForComponent;
         }
 
-        private string Merge(Dictionary<string, string> parent, string x)
+        private static string Merge(Dictionary<string, string> parent, string x)
         {
             if (parent[x] == x)
             {

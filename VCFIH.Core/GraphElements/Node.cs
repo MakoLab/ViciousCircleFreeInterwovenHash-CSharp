@@ -107,20 +107,78 @@ namespace VCFIH.Core.GraphElements
 
         internal BlankInterwovenPriorityTuple GenerateBlankInterwovenPriorityTuple(Graph g, string predicate = "")
         {
+            if (this is not BlankNode)
+            {
+                throw new InvalidOperationException("This is method cannot be executed on a real node object");
+            }
+
             var neighbours = "";
-            var miniqueue = new PriorityQueue<(Node, Uri), RealPriorityTuple>();
+
+            // Adding real incoming neighbours to the hash material in predefined order
+
+            var miniqueue1 = new PriorityQueue<(Node, Uri), RealPriorityTuple>();
             foreach (var neighbour in IncomingIris.Keys)
             {
                 foreach (var pred in IncomingIris[neighbour])
                 {
                     var neigh = g.IriNodes[neighbour];
-                    miniqueue.Enqueue((neigh, pred), neigh.GenerateRealPriorityTuple(pred.ToString()));
+                    miniqueue1.Enqueue((neigh, pred), neigh.GenerateRealPriorityTuple(pred.ToString()));
                 }
             }
-            while (miniqueue.Count > 0)
+            while (miniqueue1.Count > 0)
             {
-                var edge = miniqueue.Dequeue();
+                var edge = miniqueue1.Dequeue();
                 neighbours += new Triple(edge.Item1, edge.Item2, this).PrepareTriple();
+            }
+
+            // Adding blank incoming neighbours to the hash material in predefined order
+            var miniqueue2 = new PriorityQueue<(Node, Uri), BlankPriorityTuple>();
+            foreach (var neighbour in IncomingBlanks.Keys)
+            {
+                foreach (var pred in IncomingBlanks[neighbour])
+                {
+                    var neigh = g.BlankNodes[neighbour];
+                    miniqueue2.Enqueue((neigh, pred), neigh.GenerateBlankPriorityTuple(pred.ToString()));
+                }
+            }
+            while (miniqueue2.Count > 0)
+            {
+                var edge = miniqueue2.Dequeue();
+                neighbours += new Triple(edge.Item1, edge.Item2, this).PrepareTriple();
+            }
+
+            // Adding real neighbours to the hash material in predefined order
+
+            var miniqueue3 = new PriorityQueue<(Node, Uri), RealPriorityTuple>();
+            foreach (var neighbour in IriNeighbours.Keys)
+            {
+                foreach (var pred in IriNeighbours[neighbour])
+                {
+                    var neigh = g.IriNodes[neighbour];
+                    miniqueue3.Enqueue((neigh, pred), neigh.GenerateRealPriorityTuple(pred.ToString()));
+                }
+            }
+            while (miniqueue3.Count > 0)
+            {
+                var edge = miniqueue3.Dequeue();
+                neighbours += new Triple(this, edge.Item2, edge.Item1).PrepareTriple();
+            }
+
+            // Adding blank neighbours to the hash material in predefined order
+
+            var miniqueue4 = new PriorityQueue<(Node, Uri), BlankPriorityTuple>();
+            foreach (var neighbour in BlankNeighbours.Keys)
+            {
+                foreach (var pred in BlankNeighbours[neighbour])
+                {
+                    var neigh = g.BlankNodes[neighbour];
+                    miniqueue4.Enqueue((neigh, pred), neigh.GenerateBlankPriorityTuple(pred.ToString()));
+                }
+            }
+            while (miniqueue4.Count > 0)
+            {
+                var edge = miniqueue4.Dequeue();
+                neighbours += new Triple(this, edge.Item2, edge.Item1).PrepareTriple();
             }
 
             return (StructureLevel, BlankInDegree, InDegree, BlankOutDegree, OutDegree, neighbours, predicate);
