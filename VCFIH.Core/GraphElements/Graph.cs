@@ -24,7 +24,7 @@ namespace VCFIH.Core.GraphElements
 
         public byte[] CalculateHash(IHashCalculator hashCalculator)
         {
-            var hashValueForGraph = new byte[hashCalculator.HashSize];
+            var hashValueForGraph = new byte[hashCalculator.HashSize / 8];
             WeaklyCC = TreeMarking();
             foreach (var component in WeaklyCC)
             {

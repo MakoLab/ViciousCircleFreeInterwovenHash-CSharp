@@ -22,15 +22,17 @@ namespace VCFIH.Core.GraphElements
 
         public string PrepareTriple()
         {
-            string conversionValue, sub, obj;
-
-            sub = Subject.Translate(NodeRole.Subject);
-            conversionValue = sub;
-            conversionValue += Predicate.ToString();
-            obj = Object.Translate(NodeRole.Object);
-            conversionValue += obj;
-            
-            return conversionValue;
+            var conversionValue = new StringBuilder();
+            conversionValue.Append('<');
+            conversionValue.Append(Subject.Translate(NodeRole.Subject));
+            conversionValue.Append('>');
+            conversionValue.Append('<');
+            conversionValue.Append(Predicate.ToString());
+            conversionValue.Append('>');
+            conversionValue.Append('<');
+            conversionValue.Append(Object.Translate(NodeRole.Object));
+            conversionValue.Append('>');
+            return conversionValue.ToString();
         }
     }
 }

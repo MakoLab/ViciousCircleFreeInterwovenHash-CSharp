@@ -18,7 +18,7 @@ namespace VCFIH.Core.GraphElements
             Identifier = value;
             if (datatype != null)
             {
-                Identifier += datatype;
+                Identifier += "^^" + datatype;
             }
             if (!String.IsNullOrEmpty(lang))
             {
