@@ -7,10 +7,11 @@ using VCFIH.Core.GraphElements.Other;
 
 namespace VCFIH.Core.GraphElements
 {
-    internal class BlankNode : Node
+    public class BlankNode : Node
     {
-        public BlankNode(string identifier) : base(identifier)
+        public BlankNode(string identifier)
         {
+            Identifier = identifier;
         }
 
         public override string Translate(NodeRole role)

@@ -12,28 +12,17 @@ namespace VCFIH.Core.GraphElements
     using BlankPriorityTuple = ValueTuple<int, uint, uint, uint, uint, string>;
     using BlankInterwovenPriorityTuple = ValueTuple<int, uint, uint, uint, uint, string, string>;
 
-    internal class Graph
+    public class Graph
     {
-        internal IHashCalculator hashCalculator;
         internal IList<Triple> Triples { get; set; } = new List<Triple>();
         internal Dictionary<string, BlankNode> BlankNodes { get; set; } = new Dictionary<string, BlankNode>();
-        internal Dictionary<string, IriNode> IriNodes { get; set; } = new Dictionary<string, IriNode>();
+        internal Dictionary<string, StandardNode> StandardNodes { get; set; } = new Dictionary<string, StandardNode>();
         internal Dictionary<string, IList<string>>? WeaklyCC { get; set; }
         internal Dictionary<int, byte[]> ComponentHashValue { get; set; } = new Dictionary<int, byte[]>();
 
-        public byte[] HashValue { get; set; }
+        public byte[]? HashValue { get; set; }
 
-        public Graph(IHashCalculator hashCalculator)
-        {
-            if (hashCalculator is null)
-            {
-                throw new ArgumentNullException(nameof(hashCalculator));
-            }
-            this.hashCalculator = hashCalculator;
-            HashValue = new byte[hashCalculator.HashSize];
-        }
-
-        public byte[] CalculateHash()
+        public byte[] CalculateHash(IHashCalculator hashCalculator)
         {
             var hashValueForGraph = new byte[hashCalculator.HashSize];
             WeaklyCC = TreeMarking();
@@ -69,11 +58,10 @@ namespace VCFIH.Core.GraphElements
 
         public bool ContainsBlankNode(BlankNode bn) => BlankNodes.ContainsKey(bn.Identifier);
 
-        public bool ContainsIriNode(IriNode iNode) => IriNodes.ContainsKey(iNode.Identifier);
+        public bool ContainsIriNode(StandardNode iNode) => StandardNodes.ContainsKey(iNode.Identifier);
 
-        public void AddTriple(Triple triple)
+        public void AddTriple(Node s, Uri p, Node o)
         {
-            var o = triple.Object;
             if (o is BlankNode bnode)
             {
                 if (!BlankNodes.ContainsKey(o.Identifier))
@@ -84,14 +72,13 @@ namespace VCFIH.Core.GraphElements
             }
             else
             {
-                if (!IriNodes.ContainsKey(o.Identifier))
+                if (!StandardNodes.ContainsKey(o.Identifier))
                 {
-                    IriNodes.Add(o.Identifier, (IriNode)o);
+                    StandardNodes.Add(o.Identifier, (StandardNode)o);
                 }
-                o = IriNodes[o.Identifier];
+                o = StandardNodes[o.Identifier];
             }
 
-            var s = triple.Subject;
             if (s is BlankNode)
             {
                 if (!BlankNodes.ContainsKey(s.Identifier))
@@ -102,29 +89,31 @@ namespace VCFIH.Core.GraphElements
             }
             else
             {
-                if (!IriNodes.ContainsKey(s.Identifier))
+                if (!StandardNodes.ContainsKey(s.Identifier))
                 {
-                    IriNodes.Add(s.Identifier, (IriNode)o);
+                    StandardNodes.Add(s.Identifier, (StandardNode)o);
                 }
-                s = IriNodes[s.Identifier];
+                s = StandardNodes[s.Identifier];
             }
 
             if (o is BlankNode)
             {
-                s.AddBlankNeighbour(o, triple.Predicate);
+                s.AddBlankNeighbour(o, p);
             }
             else
             {
-                s.AddRealNeighbour(o, triple.Predicate);
+                s.AddRealNeighbour(o, p);
             }
             if (s is BlankNode)
             {
-                o.AddIncomingBlank(s, triple.Predicate);
+                o.AddIncomingBlank(s, p);
             }
             else
             {
-                o.AddIncomingReal(s, triple.Predicate);
+                o.AddIncomingReal(s, p);
             }
+
+            Triples.Add(new Triple(s, p, o));
         }
 
         public void HashIncrementTriple(Triple newTriple)
@@ -280,7 +269,7 @@ namespace VCFIH.Core.GraphElements
                     while (miniqueue1.Count > 0)
                     {
                         var neigh = miniqueue1.Dequeue();
-                        foreach (var predicate in node.BlankNeighbours[neigh.Identifier].OrderBy(uri => uri.ToString())
+                        foreach (var predicate in node.BlankNeighbours[neigh.Identifier].OrderBy(uri => uri.ToString()))
                         {
                             valueForComponent += new Triple(node, predicate, neigh).PrepareTriple();
                         }

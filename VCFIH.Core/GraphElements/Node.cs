@@ -11,7 +11,7 @@ namespace VCFIH.Core.GraphElements
     using BlankPriorityTuple = ValueTuple<int, uint, uint, uint, uint, string>;
     using BlankInterwovenPriorityTuple = ValueTuple<int, uint, uint, uint, uint, string, string>;
 
-    abstract internal class Node
+    public abstract class Node
     {
         internal string Identifier { get; set; }
         internal Dictionary<string, IList<Uri>> IncomingIris { get; set; } = new Dictionary<string, IList<Uri>>();
@@ -28,9 +28,9 @@ namespace VCFIH.Core.GraphElements
 
         public bool IsBlank => this is BlankNode;
 
-        public Node(string identifier)
+        internal Node()
         {
-            Identifier = identifier;
+            Identifier = "";
         }
 
         internal void AddBlankNeighbour(Node @object, Uri predicate)
@@ -121,7 +121,7 @@ namespace VCFIH.Core.GraphElements
             {
                 foreach (var pred in IncomingIris[neighbour])
                 {
-                    var neigh = g.IriNodes[neighbour];
+                    var neigh = g.StandardNodes[neighbour];
                     miniqueue1.Enqueue((neigh, pred), neigh.GenerateRealPriorityTuple(pred.ToString()));
                 }
             }
@@ -154,7 +154,7 @@ namespace VCFIH.Core.GraphElements
             {
                 foreach (var pred in IriNeighbours[neighbour])
                 {
-                    var neigh = g.IriNodes[neighbour];
+                    var neigh = g.StandardNodes[neighbour];
                     miniqueue3.Enqueue((neigh, pred), neigh.GenerateRealPriorityTuple(pred.ToString()));
                 }
             }

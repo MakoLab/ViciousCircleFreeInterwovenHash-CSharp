@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VCFIH.Core.GraphElements.Other
 {
-    internal enum NodeRole
+    public enum NodeRole
     {
         Subject, Object
     }

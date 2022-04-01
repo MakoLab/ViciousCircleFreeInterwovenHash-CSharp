@@ -7,7 +7,7 @@ using VCFIH.Core.GraphElements.Other;
 
 namespace VCFIH.Core.GraphElements
 {
-    internal class Triple
+    public class Triple
     {
         public Node Subject { get; set; }
         public Uri Predicate { get; set; }

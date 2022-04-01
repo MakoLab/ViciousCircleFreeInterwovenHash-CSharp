@@ -3,23 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VCFIH.Core.GraphElements.Other;
 
 namespace VCFIH.Core.GraphElements
 {
-    internal class IriNode : Node
+    public class IriNode : StandardNode
     {
-        public IriNode(string identifier) : base(identifier)
+        public IriNode(string identifier)
         {
+            Identifier = identifier;
         }
 
-        public override string Translate(NodeRole role)
+        public IriNode(Uri identifier)
         {
-            var sb = new StringBuilder();
-            sb.Append("grounded_node::role:");
-            sb.Append(role == NodeRole.Subject ? "S" : "O");
-            sb.Append(Identifier);
-            return sb.ToString();
+            Identifier = identifier.ToString();
         }
     }
 }
