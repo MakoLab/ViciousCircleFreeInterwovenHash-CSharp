@@ -14,6 +14,7 @@ namespace VCFIH.Core.GraphElements
 
     public class Graph
     {
+        private readonly IHashCalculator defaultHashCalculator = new Sha256HashCalculator();
         internal IList<Triple> Triples { get; set; } = new List<Triple>();
         internal Dictionary<string, BlankNode> BlankNodes { get; set; } = new Dictionary<string, BlankNode>();
         internal Dictionary<string, StandardNode> StandardNodes { get; set; } = new Dictionary<string, StandardNode>();
@@ -21,6 +22,11 @@ namespace VCFIH.Core.GraphElements
         internal Dictionary<int, byte[]> ComponentHashValue { get; set; } = new Dictionary<int, byte[]>();
 
         public byte[]? HashValue { get; set; }
+
+        public byte[] CalculateHash()
+        {
+            return CalculateHash(defaultHashCalculator);
+        }
 
         public byte[] CalculateHash(IHashCalculator hashCalculator)
         {
@@ -62,11 +68,28 @@ namespace VCFIH.Core.GraphElements
 
         public void AddTriple(Node s, Uri p, Node o)
         {
-            if (o is BlankNode bnode)
+            if (s is BlankNode)
+            {
+                if (!BlankNodes.ContainsKey(s.Identifier))
+                {
+                    BlankNodes.Add(s.Identifier, (BlankNode)s);
+                }
+                s = BlankNodes[s.Identifier];
+            }
+            else
+            {
+                if (!StandardNodes.ContainsKey(s.Identifier))
+                {
+                    StandardNodes.Add(s.Identifier, (StandardNode)s);
+                }
+                s = StandardNodes[s.Identifier];
+            }
+
+            if (o is BlankNode)
             {
                 if (!BlankNodes.ContainsKey(o.Identifier))
                 {
-                    BlankNodes.Add(o.Identifier, bnode);
+                    BlankNodes.Add(o.Identifier, (BlankNode)o);
                 }
                 o = BlankNodes[o.Identifier];
             }
@@ -81,19 +104,11 @@ namespace VCFIH.Core.GraphElements
 
             if (s is BlankNode)
             {
-                if (!BlankNodes.ContainsKey(s.Identifier))
-                {
-                    BlankNodes.Add(s.Identifier, (BlankNode)o);
-                }
-                s = BlankNodes[s.Identifier];
+                o.AddIncomingBlank(s, p);
             }
             else
             {
-                if (!StandardNodes.ContainsKey(s.Identifier))
-                {
-                    StandardNodes.Add(s.Identifier, (StandardNode)o);
-                }
-                s = StandardNodes[s.Identifier];
+                o.AddIncomingReal(s, p);
             }
 
             if (o is BlankNode)
@@ -104,15 +119,7 @@ namespace VCFIH.Core.GraphElements
             {
                 s.AddRealNeighbour(o, p);
             }
-            if (s is BlankNode)
-            {
-                o.AddIncomingBlank(s, p);
-            }
-            else
-            {
-                o.AddIncomingReal(s, p);
-            }
-
+            
             Triples.Add(new Triple(s, p, o));
         }
 
@@ -182,6 +189,45 @@ namespace VCFIH.Core.GraphElements
                     
             //    }
             //}
+        }
+
+        public bool CycleDetection()
+        {
+            var bg = CopyBlanks();
+            var queue = new Queue<BlankNode>();
+            var visited = new List<BlankNode>();
+            foreach (var neighbour in bg.Values)
+            {
+                neighbour.TempDegree = neighbour.BlankInDegree;
+            }
+            foreach (var node in bg.Values)
+            {
+                if (node.BlankInDegree == 0)
+                {
+                    queue.Enqueue(node);
+                }
+            }
+            while (queue.Count > 0)
+            {
+                var node = queue.Dequeue();
+                foreach (var neighbour in node.BlankNeighbours.Keys)
+                {
+                    bg[neighbour].TempDegree -= (uint)node.BlankNeighbours[neighbour].Count;
+                    if (bg[neighbour].TempDegree == 0)
+                    {
+                        queue.Enqueue(bg[neighbour]);
+                    }
+                }
+                visited.Add(node);
+            }
+            if (visited.Count != bg.Count)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public Dictionary<string, IList<string>> TreeMarking()
@@ -292,6 +338,11 @@ namespace VCFIH.Core.GraphElements
                 }
             }
             return valueForComponent;
+        }
+
+        public Dictionary<string, BlankNode> CopyBlanks()
+        {
+            return new Dictionary<string, BlankNode>(BlankNodes);
         }
 
         private static string Merge(Dictionary<string, string> parent, string x)

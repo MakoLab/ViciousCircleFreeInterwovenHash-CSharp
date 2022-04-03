@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VCFIH.Core.Cryptography;
 using VCFIH.Core.GraphElements;
 using VDS.RDF;
 
@@ -33,6 +34,18 @@ namespace VCFIH.DotNetRDF
                 graph.AddTriple(s, ((VDS.RDF.UriNode)t.Predicate).Uri, o);
             }
             return graph;
+        }
+
+        public static byte[] CalculateHash(IGraph g, IHashCalculator? hashCalculator = null)
+        {
+            if (hashCalculator == null)
+            {
+                return ReadGraph(g).CalculateHash();
+            }
+            else
+            {
+                return ReadGraph(g).CalculateHash(hashCalculator);
+            }
         }
     }
 }
