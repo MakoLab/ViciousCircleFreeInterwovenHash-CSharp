@@ -20,15 +20,9 @@ public class Sha256HashCalculator : IHashCalculator
 
     public byte[] CalculateHashAsBytes(string input)
     {
-        
-        SHA256? md = SHA256.Create(SHA256_NAME);
-        if (md == null)
-        {
-            throw new InvalidOperationException("Wrong implementation name");
-        }
         try
         {
-            return md.ComputeHash(Encoding.UTF8.GetBytes(input));
+            return SHA256.HashData(Encoding.UTF8.GetBytes(input));
         }
         catch (Exception ex)
         {
@@ -43,11 +37,13 @@ public class Sha256HashCalculator : IHashCalculator
 
     public string CombineUnordered(string[] tup)
     {
-        var sum = CalculateHashAsBytes(tup[0]);
-        for (var i = 1; i < tup.Length; i++)
+        IEnumerable<byte[]> enumerable()
         {
-            ByteArrayUtils.AddHashes(sum, CalculateHashAsBytes(tup[i]));
+            foreach (var t in tup)
+            {
+                yield return Encoding.UTF8.GetBytes(t);
+            }
         }
-        return sum.ToHexString();
+        return ByteArrayUtils.AddHashes(enumerable()).ToHexString();
     }
 }

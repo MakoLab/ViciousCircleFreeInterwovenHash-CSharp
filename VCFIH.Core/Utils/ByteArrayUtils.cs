@@ -39,32 +39,18 @@ namespace VCFIH.Core.Utils
             return result;
         }
 
-        public static byte[] AddHashes(ICollection<byte[]> hashes)
+        public static byte[] AddHashes(IEnumerable<byte[]> hashes)
         {
-            if (hashes.Count == 0)
+            if (!hashes.Any())
             {
                 throw new ArgumentException("Hash collection is empty");
             }
-            var firstLength = hashes.First().Length;
-            foreach (var h in hashes)
+            byte[] sum = new byte[hashes.First().Length];
+            foreach (var hash in hashes)
             {
-                if (h.Length != firstLength)
-                {
-                    throw new ArgumentException("Array lenghts must be the same.");
-                }
+                sum = AddHashes(sum, hash);
             }
-            var result = new byte[firstLength];
-            foreach (var h in hashes)
-            {
-                ushort sum = 0;
-                for (var i = h.Length - 1; i >= 0; i--)
-                {
-                    sum += (ushort)(h[i] + result[i]);
-                    result[i] = (byte)(sum & 0x00FF);
-                    sum >>= 8;
-                }
-            }
-            return result;
+            return sum;
         }
     }
 }

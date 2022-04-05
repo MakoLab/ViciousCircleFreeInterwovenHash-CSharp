@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using VCFIH.Core.GraphElements.Other;
+using VCFIH.Core.Utils;
 
 namespace VCFIH.Core.GraphElements
 {
@@ -25,6 +27,7 @@ namespace VCFIH.Core.GraphElements
                 Identifier += lang;
             }
             // TODO: Implement literal normalization
+            Identifier = SHA256.HashData(Encoding.UTF8.GetBytes(Identifier)).ToHexString();
         }
     }
 }
