@@ -22,18 +22,49 @@ namespace VCFIH.Core.Utils
             return new string(c);
         }
 
+        public static byte[] ToByteArray(this string hexString)
+        {
+            if (hexString.Length % 2 == 1)
+            {
+                throw new ArgumentException("Hex string cannot have odd number of digits.");
+            }
+            var byteArrLength = hexString.Length >> 1;
+            var result = new byte[byteArrLength];
+            int val, upper, res;
+            for (var i = 0; i < byteArrLength; i++)
+            {
+                val = hexString[i << 1];
+                upper = val + (((96 - val) >> 31) & -32);
+                res = (((64 - upper) >> 31) & -7) + upper - 48;
+                if (res < 0 || res > 15)
+                {
+                    throw new ArgumentOutOfRangeException($"Char {hexString[i << 1]} is not a proper hex char.");
+                }
+                result[i] = (byte)(res << 4);
+                val = hexString[(i << 1) + 1];
+                upper = val + (((96 - val) >> 31) & -32);
+                res = (((64 - upper) >> 31) & -7) + upper - 48;
+                if (res < 0 || res > 15)
+                {
+                    throw new ArgumentOutOfRangeException($"Char {hexString[(i << 1) + 1]} is not a proper hex char.");
+                }
+                result[i] |= (byte)res;
+            }
+            return result;
+        }
+
         public static byte[] AddHashes(byte[] a, byte[] b)
         {
             if (a.Length != b.Length)
             {
-                throw new ArgumentException("Array lenghts must be the same.");
+                throw new ArgumentException("Array lengths must be equal.");
             }
-            ushort sum = 0;
+            int sum = 0;
             var result = new byte[a.Length];
             for (var i = a.Length - 1; i >= 0; i--)
             {
-                sum += (ushort)(a[i] + b[i]);
-                result[i] = (byte)(sum & 0x00FF);
+                sum += a[i] + b[i];
+                result[i] = (byte)(sum & 0x000000FF);
                 sum >>= 8;
             }
             return result;
