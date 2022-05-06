@@ -220,14 +220,7 @@ namespace VCFIH.Core.GraphElements
                 }
                 visited.Add(node);
             }
-            if (visited.Count != bg.Count)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return visited.Count != bg.Count;
         }
 
         public Dictionary<string, IList<string>> TreeMarking()
