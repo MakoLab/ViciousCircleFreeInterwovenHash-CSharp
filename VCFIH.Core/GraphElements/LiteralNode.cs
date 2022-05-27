@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VCFIH.Core.GraphElements.Other;
 using VCFIH.Core.Utils;
@@ -11,23 +13,53 @@ namespace VCFIH.Core.GraphElements
 {
     public class LiteralNode : StandardNode
     {
+        private static readonly string dateTimeFormat = "yyyy-MM-ddTHH:mm:ss.fffK";
+
         public LiteralNode(string value, string? datatype, string? lang)
         {
-            if (datatype != null && !String.IsNullOrEmpty(lang))
-            {
-                throw new ArgumentException("Datatype and language cannot be present at the same time.");
-            }
-            Identifier = value;
             if (datatype != null)
             {
-                Identifier += "^^" + datatype;
+                switch (datatype)
+                {
+                    case "http://www.w3.org/2001/XMLSchema#dateTime":
+                    case "http://www.w3.org/2001/XMLSchema#dateTimeStamp":
+                        var nDate = DateTime.Parse(value).ToUniversalTime();
+                        value = nDate.ToString(dateTimeFormat);
+                        break;
+                    case "http://www.w3.org/2001/XMLSchema#decimal":
+                        var nDecimal = Double.Parse(value, CultureInfo.InvariantCulture);
+                        value = nDecimal.ToString();
+                        break;
+                    case "http://www.w3.org/2001/XMLSchema#string":
+                        datatype = "";
+                        break;
+                }
             }
-            if (!String.IsNullOrEmpty(lang))
+            value = Regex.Replace(value, @"\p{C}", "").Normalize(NormalizationForm.FormC);
+            value = EscapeN3(value);
+            if (lang != null && !String.IsNullOrWhiteSpace(lang))
             {
-                Identifier += lang;
+                value += lang;
             }
-            // TODO: Implement literal normalization
-            Identifier = SHA256.HashData(Encoding.UTF8.GetBytes(Identifier)).ToHexString();
+            else
+            {
+                if (datatype != null && !String.IsNullOrWhiteSpace(datatype))
+                {
+                    value += datatype;
+                }
+            }
+            Identifier = SHA256.HashData(Encoding.UTF8.GetBytes(value)).ToHexString();
+        }
+
+        private static string EscapeN3(string s)
+        {
+            return s.Replace("\\", "\\\\")
+                    .Replace("\"", "\\\"")
+                    .Replace("\t", "\\t")
+                    .Replace("\r", "\\r")
+                    .Replace("\n", "\\n")
+                    .Replace("\b", "\\b")
+                    .Replace("\f", "\\f");
         }
     }
 }

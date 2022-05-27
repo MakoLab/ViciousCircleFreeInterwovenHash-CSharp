@@ -15,7 +15,7 @@ namespace VCFIH.Test
             FileLoader.Load(g, "rdf\\rdf1.ttl");
             var hash = DotNetRDFReader.CalculateHash(g).ToHexString();
             Assert.IsNotNull(hash);
-            Assert.AreEqual("389a4b27a8e5e693096781c8ee59df40c8d2a29f93f2e5f83e6940bd2c4533d9", hash);
+            Assert.AreEqual("495e88dfba09abdf20c3d3377af5d7338c1c9b5898d1932f4c5f9591359b774d", hash);
         }
 
         [TestMethod]
@@ -34,9 +34,9 @@ namespace VCFIH.Test
             Assert.IsNotNull(hash1);
             Assert.IsNotNull(hash2);
             Assert.IsNotNull(hash3);
-            Assert.AreEqual("ebe55e3e1064098abfbac668db24a3dedb630fbc7dbaf7e61219ca20c9459035", hash1);
-            Assert.AreEqual("ebe55e3e1064098abfbac668db24a3dedb630fbc7dbaf7e61219ca20c9459035", hash2);
-            Assert.AreEqual("ebe55e3e1064098abfbac668db24a3dedb630fbc7dbaf7e61219ca20c9459035", hash3);
+            Assert.AreEqual("46596a5ee27ade4659bb40fb2d34c84ee88ee0b46830333472c9109371b0ea67", hash1);
+            Assert.AreEqual("46596a5ee27ade4659bb40fb2d34c84ee88ee0b46830333472c9109371b0ea67", hash2);
+            Assert.AreEqual("46596a5ee27ade4659bb40fb2d34c84ee88ee0b46830333472c9109371b0ea67", hash3);
         }
 
         [TestMethod]
@@ -46,7 +46,7 @@ namespace VCFIH.Test
             FileLoader.Load(g, "rdf\\rdf3.ttl");
             var hash = DotNetRDFReader.CalculateHash(g).ToHexString();
             Assert.IsNotNull(hash);
-            Assert.AreEqual("4949f3ce018302db6299f294a3f12e1f73c83dbee5654717b209c9853945431d", hash);
+            Assert.AreEqual("105b977a67544242e503de5b6da15e8b890fe8681e2ca10805eeeedf7d73f86b", hash);
         }
     }
 }
